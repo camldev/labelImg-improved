@@ -53,7 +53,7 @@ from libs.version import __version__
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'platforms')
 else:
     os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = "D:\codingTools\MiniConda\envs\web\Lib\site-packages\PyQt5\Qt5\plugins\platforms"

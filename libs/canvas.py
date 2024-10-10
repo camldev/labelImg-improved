@@ -418,6 +418,7 @@ class Canvas(QWidget):
             self.boundedMoveShape(shape, point + offset)
 
     def paintEvent(self, event):
+
         if not self.pixmap:
             return super(Canvas, self).paintEvent(event)
 
@@ -459,13 +460,14 @@ class Canvas(QWidget):
             p.drawLine(0, self.prevPoint.y(), self.pixmap.width(), self.prevPoint.y())
 
         self.setAutoFillBackground(True)
+
         if self.verified:
             pal = self.palette()
-            pal.setColor(self.backgroundRole(), QColor(184, 239, 38, 128))
+            pal.setColor(self.backgroundRole(), QColor(49, 249, 222, 255))
             self.setPalette(pal)
         else:
             pal = self.palette()
-            pal.setColor(self.backgroundRole(), QColor(232, 232, 232, 255))
+            pal.setColor(self.backgroundRole(), QColor(69, 83, 100, 39))
             self.setPalette(pal)
 
         p.end()
