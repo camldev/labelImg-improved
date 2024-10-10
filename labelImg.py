@@ -11,6 +11,11 @@ import subprocess
 from functools import partial
 from collections import defaultdict
 
+
+from PyQt5 import QtWidgets
+
+import qdarkstyle
+
 try:
     from PyQt5.QtGui import *
     from PyQt5.QtCore import *
@@ -47,13 +52,14 @@ from libs.ustr import ustr
 from libs.version import __version__
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 
-__appname__ = 'labelImg'
+
 if getattr(sys, 'frozen', False):
-    # 如果程序已打包
     os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(sys._MEIPASS, 'platforms')
 else:
-    # 如果在开发环境中
-    os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(sys.prefix, 'Lib', 'site-packages', 'PyQt5', 'Qt', 'plugins', 'platforms')
+    os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = "D:\codingTools\MiniConda\envs\web\Lib\site-packages\PyQt5\Qt5\plugins\platforms"
+
+__appname__ = 'labelImg'
+
 # Utility functions and classes.
 
 def have_qstring():
@@ -268,6 +274,9 @@ class MainWindow(QMainWindow, WindowMixin):
                               'Ctrl+Shift+A', 'expert', getStr('advancedModeDetail'),
                               checkable=True)
 
+        darkMode = action(getStr("darkMode"),self.toggleDarkMode,
+                          'Ctrl+Alt+V','darkMode',getStr("darkModeDetail"),
+                          checkable=True)
         hideAll = action('&Hide\nRectBox', partial(self.togglePolygons, False),
                          'Ctrl+H', 'hide', getStr('hideAllBoxDetail'),
                          enabled=False)
@@ -342,7 +351,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Store actions for further handling.
         self.actions = struct(save=save, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
-                              createMode=createMode, editMode=editMode, advancedMode=advancedMode,
+                              createMode=createMode, editMode=editMode, advancedMode=advancedMode,darkMode=darkMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
                               fitWindow=fitWindow, fitWidth=fitWidth,
@@ -384,6 +393,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.displayLabelOption.setChecked(settings.get(SETTING_PAINT_LABEL, False))
         self.displayLabelOption.triggered.connect(self.togglePaintLabelsOption)
 
+        self.darkModeOption = QAction(getStr('darkMode'),self)
+        self.darkModeOption.setShortcut("Ctrl+Alt+V")
+        self.darkModeOption.setCheckable(True)
+
         addActions(self.menus.file,
                    (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
         addActions(self.menus.help, (help, showInfo))
@@ -391,7 +404,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.autoSaving,
             self.singleClassMode,
             self.displayLabelOption,
-            labels, advancedMode, None,
+            labels, advancedMode, darkMode,None,
             hideAll, showAll, None,
             zoomIn, zoomOut, zoomOrg, None,
             fitWindow, fitWidth))
@@ -421,7 +434,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.image = QImage()
         self.filePath = ustr(defaultFilename)
         self.recentFiles = []
-        self.maxRecent = 7
+        self.maxRecent = 15
         self.lineColor = None
         self.fillColor = None
         self.zoom_level = 100
@@ -470,6 +483,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if xbool(settings.get(SETTING_ADVANCE_MODE, False)):
             self.actions.advancedMode.setChecked(True)
             self.toggleAdvancedMode()
+
 
         # Populate the File menu dynamically.
         self.updateFileMenu()
@@ -536,6 +550,15 @@ class MainWindow(QMainWindow, WindowMixin):
             self.dock.setFeatures(self.dock.features() | self.dockFeatures)
         else:
             self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
+
+    def toggleDarkMode(self,value=True):
+        app = QtWidgets.QApplication.instance()
+        if value:
+            self.actions.darkMode.setEnabled(True)
+            app.setStyleSheet(qdarkstyle.load_stylesheet())
+        else:
+            app.setStyleSheet(qdarkstyle.load_stylesheet(qdarkstyle.light.palette.LightPalette))
+
 
     def populateModeActions(self):
         if self.beginner():
@@ -1118,6 +1141,7 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             settings[SETTING_LAST_OPEN_DIR] = ''
 
+        settings[SETTING_DARK_MODE] = self.darkModeOption.isChecked()
         settings[SETTING_AUTO_SAVE] = self.autoSaving.isChecked()
         settings[SETTING_SINGLE_CLASS] = self.singleClassMode.isChecked()
         settings[SETTING_PAINT_LABEL] = self.displayLabelOption.isChecked()
@@ -1454,7 +1478,7 @@ def read(filename, default=None):
     except:
         return default
 
-import qdarkstyle
+
 def get_main_app(argv=[]):
     """
     Standard boilerplate Qt application code.
@@ -1463,7 +1487,7 @@ def get_main_app(argv=[]):
     app = QApplication(argv)
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon("app"))
-    app.setStyleSheet(qdarkstyle.load_stylesheet())
+
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     # Usage : labelImg.py image predefClassFile saveDir
     win = MainWindow(argv[1] if len(argv) >= 2 else None,
